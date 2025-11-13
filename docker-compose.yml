@@ -1,0 +1,39 @@
+services:
+  # --- SERVICIO BANCO ---
+  api_banco:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./servicio_banco:/app
+      - ./data/banco_db:/app/data_db
+      - ./data/banco_uploads:/app/data_uploads
+    ports:
+      - "8000:80"
+    environment:
+      - BANCO_API_KEY=mi-llave-secreta-123456
+    command: ["uvicorn", "mainBanco:app", "--host", "0.0.0.0", "--port", "80"]
+    restart: unless-stopped
+    networks: [appnet]
+
+  # --- SERVICIO SEGUROS ---
+  api_seguros:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./servicio_seguros:/app
+      - ./data/seguros_db:/app/data_db
+    ports:
+      - "8001:80"
+    environment:
+      - BANCO_SERVICE_URL=http://api_banco:80
+      - BANCO_API_KEY=mi-llave-secreta-123456
+    command: ["uvicorn", "mainSeguros:app", "--host", "0.0.0.0", "--port", "80"]
+    depends_on: [api_banco]
+    restart: unless-stopped
+    networks: [appnet]
+
+networks:
+  appnet:
+    driver: bridge
